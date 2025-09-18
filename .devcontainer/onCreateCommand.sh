@@ -48,7 +48,6 @@ cp /tmp/$REPOSITORY/windows/data.img /workspaces/$REPOSITORY/windows/data.img
     echo "      RAM_SIZE: $(free --gibi | grep 'Mem:' | awk '{print $7}')G"
     echo "      DISK_SIZE: $(df --human-readable --block-size G /workspaces | grep '/workspaces' | awk '{print $4}')"
     echo "      DISK2_SIZE: $(df --human-readable --block-size G /tmp | grep '/tmp' | awk '{print $4}')"
-    echo "      ARGUMENTS: \"-cpu host,arch_capabilities=off\""
     echo "      BOOT_MODE: windows"
     echo "      TPM: Y"
     echo "      KVM: Y"
