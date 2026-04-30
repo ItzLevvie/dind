@@ -68,6 +68,6 @@ RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/buildx.
 RUN chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
 
 # https://github.com/cli/cli/releases/latest
-# Download the "GitHub CLI 2.92.0 linux amd64" file under "Assets"
+# Download the "GitHub CLI 2.XX.X linux amd64" file under "Assets"
 RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/gh --output-document /usr/local/bin/gh
 RUN chmod +x /usr/local/bin/gh
