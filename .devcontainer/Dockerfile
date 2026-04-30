@@ -18,6 +18,7 @@ RUN update-alternatives --set iptables /usr/sbin/iptables-legacy
 RUN update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
 
 # https://www.speedtest.net/apps/cli
+# Click on the "Download for Linux" button and then click on "x86_64"
 RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/speedtest --output-document /usr/local/bin/speedtest
 RUN chmod +x /usr/local/bin/speedtest
 
