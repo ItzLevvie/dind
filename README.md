@@ -230,7 +230,7 @@ Ngrok requires your payment details to allow TCP connections which is required f
 
 - Hyper-V with Secure Boot, Trusted Platform Module (TPM), and Network Adapter (Ethernet) disabled.
 - `Windows11_InsiderPreview_EnterpriseVL_x64_en-us_29576_1000.iso` from [Windows Insider Preview — ISOs](https://www.microsoft.com/en-us/software-download/windowsinsiderpreviewiso) is mounted as a DVD Drive on Hyper-V.
-- `virtio-win-1.9.50.iso` from [Red Hat Enterprise Linux 10 — AppStream](https://github.com/ItzLevvie/artifacts/releases/latest/download/virtio-win.iso) is mounted as a DVD Drive on Hyper-V.
+- `virtio-win-1.9.57.iso` from [Red Hat Enterprise Linux 10 — AppStream](https://github.com/ItzLevvie/artifacts/releases/latest/download/virtio-win.iso) is mounted as a DVD Drive on Hyper-V.
 
 ---
 
@@ -254,7 +254,7 @@ Create three registry entries at `HKEY_LOCAL_MACHINE\SYSTEM\Setup\LabConfig`:
 - click `Load Driver`
 - uncheck `Hide drivers that aren't compatible with this computer's hardware`
 - click `Browse`
-- select `CD Drive (E:) virtio-win-1.9.50`
+- select `CD Drive (E:) virtio-win-1.9.57`
 - install `vioscsi` from `E:\vioscsi\w11\amd64\vioscsi.inf`
 
 > [!IMPORTANT]
