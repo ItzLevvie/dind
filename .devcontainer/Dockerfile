@@ -28,7 +28,7 @@ RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/fastfet
 RUN chmod +x /usr/local/bin/fastfetch
 
 # https://pkgs.tailscale.com/unstable
-# Click on "Linux" then click on "tailscale_1.97.287_amd64.tgz" under "Static binaries (other distros)"
+# Click on "Linux" and then click on "tailscale_X.XX.XXX_amd64.tgz" under "Static binaries (other distros)"
 RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/tailscale --output-document /usr/local/bin/tailscale
 RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/tailscaled --output-document /usr/local/bin/tailscaled
 RUN chmod +x /usr/local/bin/tailscale
