@@ -1,5 +1,5 @@
 {
-    "name": "Windows 11 Enterprise (Canary) + Tailscale (unstable)",
+    "name": "Windows 11 (Canary) + Tailscale (unstable)",
     "build": {
         "dockerfile": "Dockerfile"
     },
