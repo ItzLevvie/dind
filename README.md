@@ -140,7 +140,7 @@ GitHub Codespaces has many different machine types which you can choose based on
 It uses the [AMD EPYC™ 7763](https://www.amd.com/en/products/processors/server/epyc/7003-series/amd-epyc-7763.html) (Milan) CPU which delivers the best performance as seen in [Performance Benchmarks of Cloud Machines (December 2023)](https://bas.codes/posts/cloudbench2312).
 
 > [!NOTE]
-> As of 2026, your GitHub Codespaces may use the AMD EPYC™ 9V74 (Genoa) CPU in some regions or machine types.
+> As of 2026, your GitHub Codespaces may use the [AMD EPYC™ 9V74](https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/general-purpose/dasv6-series) (Genoa) CPU in some regions or machine types.
 
 Previously, GitHub Codespaces used [Intel® Xeon® Platinum 8370C](https://azure.microsoft.com/en-us/blog/upgrade-your-infrastructure-with-the-latest-dv5ev5-azure-vms-in-preview/) (Ice Lake), [Intel® Xeon® Platinum 8272CL](https://azure.microsoft.com/en-us/blog/new-general-purpose-and-memoryoptimized-azure-virtual-machines-with-intel-now-available/) (Cascade Lake), and [Intel® Xeon® Platinum 8168](https://azure.microsoft.com/en-us/blog/fv2-vms-are-now-available-the-fastest-vms-on-azure/) (Skylake) CPUs.
 
