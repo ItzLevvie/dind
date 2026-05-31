@@ -1,6 +1,6 @@
 clear
 
-tailscale up --hostname codespaces --advertise-exit-node --qr
+tailscale up --hostname codespaces --advertise-exit-node
 clear
 
 echo "IPv4: $(tailscale ip --4)"
