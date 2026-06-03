@@ -15,6 +15,7 @@ cp /workspaces/$REPOSITORY/.devcontainer/helpers/reset /usr/local/bin/reset
 cp /workspaces/$REPOSITORY/.devcontainer/helpers/rebuild /usr/local/bin/rebuild
 cp /workspaces/$REPOSITORY/.devcontainer/helpers/remove /usr/local/bin/remove
 cp /workspaces/$REPOSITORY/.devcontainer/helpers/kill /usr/local/bin/kill
+cp /workspaces/$REPOSITORY/.devcontainer/helpers/start-tailscale /usr/local/bin/start-tailscale
 chmod +x /usr/local/bin/start
 chmod +x /usr/local/bin/stop
 chmod +x /usr/local/bin/restart
@@ -22,6 +23,7 @@ chmod +x /usr/local/bin/reset
 chmod +x /usr/local/bin/rebuild
 chmod +x /usr/local/bin/remove
 chmod +x /usr/local/bin/kill
+chmod +x /usr/local/bin/start-tailscale
 
 wget https://github.com/ItzLevvie/artifacts/releases/download/29599-1/data.7z.001 --output-document /tmp/$REPOSITORY/windows/data.7z.001
 wget https://github.com/ItzLevvie/artifacts/releases/download/29599-1/data.7z.002 --output-document /tmp/$REPOSITORY/windows/data.7z.002

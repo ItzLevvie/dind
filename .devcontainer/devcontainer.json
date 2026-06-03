@@ -49,6 +49,5 @@
     "initializeCommand": "sudo bash .devcontainer/initializeCommand.sh",
     "onCreateCommand": "sudo bash .devcontainer/onCreateCommand.sh",
     "postStartCommand": "sudo bash .devcontainer/postStartCommand.sh",
-    "postAttachCommand": "sudo bash .devcontainer/postAttachCommand.sh",
     "waitFor": "postStartCommand"
 }

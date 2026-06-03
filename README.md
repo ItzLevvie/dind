@@ -113,6 +113,7 @@ This repository contains a few helper scripts[^3] to get you started.
 | reset | Resets Windows 11 to a clean state <br><br> Note: This will only work if the `/tmp/github/windows/data.img` file exists |
 | remove | Removes the `windows` container |
 | rebuild | Performs a full rebuild of your GitHub Codespaces |
+| start-tailscale | Starts Tailscale |
 
 ## Frequently Asked Questions (FAQ)
 

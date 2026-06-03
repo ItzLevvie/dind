@@ -1,5 +1,7 @@
 export REPOSITORY=github
 
+start-tailscale
+
 dockerd --seccomp-profile unconfined --experimental &> /dev/null &
 
 if docker compose --file /workspaces/$REPOSITORY/windows/windows.yaml images | grep --quiet "windows"; then

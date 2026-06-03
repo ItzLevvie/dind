@@ -16,5 +16,3 @@ mkswap /tmp/swap
 swapon /tmp/swap
 
 dockerd --seccomp-profile unconfined --experimental &> /dev/null &
-
-tailscaled -statedir /workspaces/$REPOSITORY/.devcontainer/tailscale &> /dev/null &
