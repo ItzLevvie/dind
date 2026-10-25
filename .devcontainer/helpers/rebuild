@@ -1,1 +1,4 @@
-gh codespace rebuild --codespace $CODESPACE_NAME --full
+#!/usr/bin/env bash
+set -Eeuo pipefail
+[[ -n "${CODESPACE_NAME:-}" ]] || { echo 'This command requires a GitHub Codespace.' >&2; exit 1; }
+gh codespace rebuild --codespace "$CODESPACE_NAME" --full

@@ -1,7 +1,18 @@
-export REPOSITORY=github
-
-kill
-rm --force /workspaces/$REPOSITORY/windows/data.img
-
-cp /tmp/$REPOSITORY/windows/data.img /workspaces/$REPOSITORY/windows/data.img
-start
+#!/usr/bin/env bash
+set -Eeuo pipefail
+[[ "${1:-}" == --yes ]] || { echo 'Reset replaces the Windows disk. Use reset --yes to discard Windows changes.' >&2; exit 1; }
+source "${WINDOWS_WORKSPACE:-$(cat /usr/local/lib/windows-dind/workspace)}/.devcontainer/helpers/common.sh"
+vm_lock
+require_config
+preflight
+ensure_docker
+# Stop the actual Compose service before touching its disk, rather than invoking
+# Bash's built-in kill without a PID. Image preparation preserves the old disk
+# until a replacement has been successfully converted.
+compose down --timeout 120
+rm -f "$storage/.autostart"
+bash "$workspace/.devcontainer/prepare-image.sh" --replace
+prepare_vm
+compose up --detach --remove-orphans
+touch "$storage/.autostart"
+show_access

@@ -1,12 +1,49 @@
-export REPOSITORY=github
+#!/usr/bin/env bash
+set -Eeuo pipefail
+source "${WINDOWS_WORKSPACE:-$(cat /usr/local/lib/windows-dind/workspace)}/.devcontainer/helpers/common.sh"
+mkdir -p -- "$storage/tailscale" /run/windows-dind
+chmod 700 "$storage/tailscale"
+(
+    flock -w 15 8 || exit 1
+    if [[ ! -e "$storage/tailscale/tailscaled.state" && -s "$workspace/.devcontainer/tailscale/tailscaled.state" ]]; then
+        cp -a -- "$workspace/.devcontainer/tailscale/." "$storage/tailscale/"
+        chmod 700 "$storage/tailscale"
+    fi
+    if ! tailscale status --json >/dev/null 2>&1; then
+        if ! pgrep -x tailscaled >/dev/null; then
+            nohup setsid --fork tailscaled --statedir="$storage/tailscale" \
+                > /run/windows-dind/tailscale.log 2>&1 </dev/null 8>&- 9>&- &
+        fi
+        for ((attempt=0; attempt<15; attempt++)); do
+            tailscale status --json >/dev/null 2>&1 && break
+            sleep 1
+        done
+    fi
+) 8> /run/windows-dind/tailscale.lock
 
-tailscaled -statedir /workspaces/$REPOSITORY/.devcontainer/tailscale &> /dev/null &
+if ! status=$(tailscale status --json); then
+    tail -n 40 /run/windows-dind/tailscale.log >&2 || true
+    fail 'Tailscale did not become ready; see /run/windows-dind/tailscale.log.'
+fi
+state=$(printf '%s' "$status" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("BackendState", "Unknown"))')
+if [[ "$state" != Running ]]; then
+    if [[ "${1:-}" == --resume-only && -z "${TAILSCALE_AUTHKEY:-}" ]]; then
+        echo 'Tailscale needs authentication. Run start-tailscale in a terminal.'
+        exit 0
+    fi
+    # Keep login interactive and separate from Windows startup. A Codespaces
+    # secret named TAILSCALE_AUTHKEY optionally enables unattended login.
+    args=(--hostname="windows-${CODESPACE_NAME:-codespaces}" --accept-dns=false --accept-routes=false --advertise-exit-node=false)
+    if [[ -n "${TAILSCALE_AUTHKEY:-}" ]]; then
+        key_file=$(mktemp /run/windows-dind/ts-key.XXXXXX)
+        chmod 600 "$key_file"
+        trap 'rm -f "$key_file"' EXIT
+        printf '%s' "$TAILSCALE_AUTHKEY" > "$key_file"
+        args+=(--auth-key="file:$key_file")
+    fi
+    tailscale up "${args[@]}"
+fi
 
-tailscale up --hostname codespaces --advertise-exit-node
-clear
-
-echo
-echo "IPv4: $(tailscale ip --4)"
-echo "IPv6: $(tailscale ip --6)"
-echo "DNS: $(tailscale whois $(tailscale ip --4) | grep -oP '[a-z0-9-]+\.[a-z0-9-]+\.ts\.net')"
-echo
+echo "RDP address: $(tailscale ip --4):3389"
+echo 'Sign in to Tailscale on your computer with the same account, then use Remote Desktop.'
+echo 'Run tailscale ping <your-computer-name> to check whether the connection is direct.'

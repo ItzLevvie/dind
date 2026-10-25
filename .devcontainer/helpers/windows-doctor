@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+source "${WINDOWS_WORKSPACE:-$(cat /usr/local/lib/windows-dind/workspace)}/.devcontainer/helpers/common.sh"
+python3 "$workspace/.devcontainer/windows-config.py" --resources
+python3 "$workspace/.devcontainer/windows-config.py" --check-kvm || true
+python3 "$workspace/.devcontainer/windows-config.py" --storage
+if [[ -s "$storage/storage.json" ]]; then
+    echo 'Storage plan at the most recent VM start:'
+    cat "$storage/storage.json"
+fi
+
+if docker info >/dev/null 2>&1 && [[ -s "$compose_file" ]]; then
+    compose ps --all
+    compose logs --tail 40 windows
+    if [[ $(docker inspect --format '{{.State.Running}}' windows 2>/dev/null) == true ]]; then
+        # QEMU sets its process name to "windows"; pgrep qemu-system misses it.
+        docker exec windows sh -c 'if test -r /run/shm/qemu.pid; then ps -p "$(cat /run/shm/qemu.pid)" -o pid,args; fi'
+        docker exec windows python3 -c '
+from pathlib import Path
+import socket
+host=Path("/run/shm/qemu.ip").read_text().strip()
+try:
+    with socket.create_connection((host,3389), timeout=3):
+        print("Guest RDP TCP listener is reachable; a client login is still needed to validate authentication.")
+except OSError as e:
+    print("Guest RDP is not ready:", e)
+'
+    fi
+fi
+if tailscale status --json >/dev/null 2>&1; then
+    tailscale status
+    tailscale ip --4 || true
+fi

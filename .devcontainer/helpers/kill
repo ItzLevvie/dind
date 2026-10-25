@@ -1,3 +1,8 @@
-export REPOSITORY=github
-
-docker compose --file /workspaces/$REPOSITORY/windows/windows.yaml kill
+#!/usr/bin/env bash
+set -Eeuo pipefail
+source "${WINDOWS_WORKSPACE:-$(cat /usr/local/lib/windows-dind/workspace)}/.devcontainer/helpers/common.sh"
+vm_lock
+require_config
+ensure_docker
+compose kill
+rm -f "$storage/.autostart"

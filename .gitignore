@@ -1,0 +1,4 @@
+/windows/
+/.devcontainer/tailscale/
+__pycache__/
+*.pyc

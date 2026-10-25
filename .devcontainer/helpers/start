@@ -1,11 +1,22 @@
-export REPOSITORY=github
-
-start-tailscale
-
-dockerd --seccomp-profile unconfined --experimental &> /dev/null &
-
-if docker compose --file /workspaces/$REPOSITORY/windows/windows.yaml images | grep --quiet "windows"; then
-    docker compose --file /workspaces/$REPOSITORY/windows/windows.yaml start
-else
-    docker compose --file /workspaces/$REPOSITORY/windows/windows.yaml up
+#!/usr/bin/env bash
+set -Eeuo pipefail
+source "${WINDOWS_WORKSPACE:-$(cat /usr/local/lib/windows-dind/workspace)}/.devcontainer/helpers/common.sh"
+vm_lock
+preflight
+ensure_docker
+if [[ $(docker inspect --format '{{.State.Running}}' windows 2>/dev/null || true) == true ]]; then
+    if [[ $(docker inspect --format '{{index .Config.Labels "com.windows-dind.config"}}' windows) == 5 && -s "$compose_file" ]]; then
+        touch "$storage/.autostart"
+        echo 'Windows is already running. Use restart to apply resource changes.'
+        show_access
+        exit 0
+    fi
+    # Migrate a running container created by the original scripts gracefully.
+    docker stop --time 120 windows
 fi
+bash "$workspace/.devcontainer/prepare-image.sh"
+prepare_vm
+# up creates missing containers and reconciles changed resource allocations.
+compose up --detach --remove-orphans
+touch "$storage/.autostart"
+show_access

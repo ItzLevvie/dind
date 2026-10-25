@@ -1,75 +1,41 @@
-FROM debian:sid-slim
+# syntax=docker/dockerfile:1
+ARG BASE_IMAGE=debian:trixie-slim
+FROM ${BASE_IMAGE}
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get update
+# Use matching, supported Docker components instead of unrelated nightly builds.
+# The optional CA secret is for builds in a managed workspace with an HTTPS proxy.
+RUN --mount=type=secret,id=proxy_ca \
+    set -eu; \
+    if [ -s /run/secrets/proxy_ca ]; then \
+      export SSL_CERT_FILE=/run/secrets/proxy_ca; \
+      printf 'Acquire::https::CaInfo "/run/secrets/proxy_ca";\n' > /etc/apt/apt.conf.d/99-build-ca; \
+    fi; \
+    apt-get update; \
+    DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends --yes \
+      ca-certificates curl docker.io docker-cli docker-compose docker-buildx \
+      qemu-utils 7zip python3 git gh openssh-client openssh-server iptables iproute2 ethtool \
+      procps util-linux htop; \
+    rm -f /etc/ssh/ssh_host_*; \
+    rm -f /etc/apt/apt.conf.d/99-build-ca; \
+    rm -rf /var/lib/apt/lists/*
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install sudo --no-install-recommends --yes
-RUN DEBIAN_FRONTEND=noninteractive apt-get install wget --no-install-recommends --yes
-RUN DEBIAN_FRONTEND=noninteractive apt-get install ca-certificates --no-install-recommends --yes
-RUN DEBIAN_FRONTEND=noninteractive apt-get install iptables --no-install-recommends --yes
-RUN DEBIAN_FRONTEND=noninteractive apt-get install qemu-utils --no-install-recommends --yes
-RUN DEBIAN_FRONTEND=noninteractive apt-get install p7zip-full --no-install-recommends --yes
-RUN DEBIAN_FRONTEND=noninteractive apt-get install openssh-server --no-install-recommends --yes
-RUN DEBIAN_FRONTEND=noninteractive apt-get install htop --no-install-recommends --yes
-RUN DEBIAN_FRONTEND=noninteractive apt-get install ethtool --no-install-recommends --yes
+ARG TAILSCALE_VERSION=1.102.4
+RUN --mount=type=secret,id=proxy_ca \
+    set -eu; \
+    ca_file=/etc/ssl/certs/ca-certificates.crt; \
+    if [ -s /run/secrets/proxy_ca ]; then ca_file=/run/secrets/proxy_ca; fi; \
+    curl --fail --location --retry 3 --cacert "$ca_file" \
+      "https://pkgs.tailscale.com/stable/tailscale_${TAILSCALE_VERSION}_amd64.tgz" \
+      --output /tmp/tailscale.tgz; \
+    curl --fail --location --retry 3 --cacert "$ca_file" \
+      "https://pkgs.tailscale.com/stable/tailscale_${TAILSCALE_VERSION}_amd64.tgz.sha256" \
+      --output /tmp/tailscale.sha256; \
+    cd /tmp; \
+    printf '%s  tailscale.tgz\n' "$(cut -d ' ' -f 1 tailscale.sha256)" | sha256sum --check -; \
+    tar -xzf tailscale.tgz; \
+    install -m 0755 "tailscale_${TAILSCALE_VERSION}_amd64/tailscale" /usr/local/bin/tailscale; \
+    install -m 0755 "tailscale_${TAILSCALE_VERSION}_amd64/tailscaled" /usr/local/bin/tailscaled; \
+    rm -rf tailscale.tgz tailscale.sha256 "tailscale_${TAILSCALE_VERSION}_amd64"
 
-RUN rm --recursive --force /var/lib/apt/lists/*
-
-RUN update-alternatives --set iptables /usr/sbin/iptables-legacy
-RUN update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
-
-# https://www.speedtest.net/apps/cli
-# Click on "Download for Linux" and then click on "x86_64"
-RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/speedtest --output-document /usr/local/bin/speedtest
-RUN chmod +x /usr/local/bin/speedtest
-
-# https://github.com/fastfetch-cli/fastfetch/actions/workflows/ci.yml?query=event%3Apush+is%3Asuccess+branch%3Adev
-# Click on the latest run and then click on "fastfetch-linux-amd64" under "Artifacts"
-RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/fastfetch --output-document /usr/local/bin/fastfetch
-RUN chmod +x /usr/local/bin/fastfetch
-
-# https://pkgs.tailscale.com/unstable
-# Click on "Linux" and then click on "tailscale_X.XX.XXX_amd64.tgz" under "Static binaries (other distros)"
-RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/tailscale --output-document /usr/local/bin/tailscale
-RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/tailscaled --output-document /usr/local/bin/tailscaled
-RUN chmod +x /usr/local/bin/tailscale
-RUN chmod +x /usr/local/bin/tailscaled
-
-# https://github.com/moby/moby/actions/workflows/buildkit.yml?query=event%3Apush+is%3Asuccess+branch%3Amaster
-# Click on the latest run and then click on "binary" under "Artifacts"
-RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/docker-proxy --output-document /usr/local/bin/docker-proxy
-RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/dockerd --output-document /usr/local/bin/dockerd
-RUN chmod +x /usr/local/bin/docker-proxy
-RUN chmod +x /usr/local/bin/dockerd
-
-# https://github.com/docker/cli/actions/workflows/build.yml?query=event%3Apush+is%3Asuccess+branch%3Amaster
-# Click on the latest run and then click on "binary-linux-amd64" under "Artifacts"
-RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/docker-linux-amd64 --output-document /usr/local/bin/docker
-RUN chmod +x /usr/local/bin/docker
-
-# https://github.com/containerd/containerd/actions/workflows/release.yml?query=event%3Apush+is%3Asuccess+branch%3Amain
-# Click on the latest run and then click on "release-tars-linux-amd64" under "Artifacts"
-RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/containerd-shim-runc-v2 --output-document /usr/local/bin/containerd-shim-runc-v2
-RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/containerd --output-document /usr/local/bin/containerd
-RUN chmod +x /usr/local/bin/containerd-shim-runc-v2
-RUN chmod +x /usr/local/bin/containerd
-
-# https://github.com/opencontainers/runc/actions/workflows/validate.yml?query=event%3Apush+is%3Asuccess+branch%3Amain
-# Click on the latest run and then click on "release-XXXXXXXXXXX" under "Artifacts"
-RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/runc.amd64 --output-document /usr/local/bin/runc
-RUN chmod +x /usr/local/bin/runc
-
-# https://github.com/docker/compose/actions/workflows/ci.yml?query=event%3Apush+is%3Asuccess+branch%3Amain
-# Click on the latest run and then click on "compose" under "Artifacts"
-RUN mkdir --parents /usr/local/lib/docker/cli-plugins
-RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/docker-compose-linux-x86_64 --output-document /usr/local/lib/docker/cli-plugins/docker-compose
-RUN chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
-
-# https://github.com/docker/buildx/actions/workflows/build.yml?query=event%3Apush+is%3Asuccess+branch%3Amaster
-# Click on the latest run and then click on "buildx" file under "Artifacts"
-RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/buildx.linux-amd64 --output-document /usr/local/lib/docker/cli-plugins/docker-buildx
-RUN chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
-
-# https://github.com/cli/cli/releases/latest
-# Click on "GitHub CLI X.XX.X linux amd64" under "Assets"
-RUN wget https://github.com/ItzLevvie/artifacts/releases/latest/download/gh --output-document /usr/local/bin/gh
-RUN chmod +x /usr/local/bin/gh
+RUN update-alternatives --set iptables /usr/sbin/iptables-legacy \
+    && update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy

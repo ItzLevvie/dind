@@ -1,91 +1,20 @@
-export REPOSITORY=github
+#!/usr/bin/env bash
+set -Eeuo pipefail
 
-rm --recursive --force /tmp/$REPOSITORY
-mkdir --parents /tmp/$REPOSITORY/windows
-mv --force /workspaces/$REPOSITORY/.devcontainer /tmp/$REPOSITORY/.devcontainer
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+workspace=$(dirname -- "$script_dir")
+mkdir -p -- "$workspace/windows"
+# GitHub CLI starts its own SSH session; provide a server and unique host keys.
+install -d -m 0755 /run/sshd
+ssh-keygen -A
+install -d /usr/local/lib/windows-dind
+printf '%s\n' "$workspace" > /usr/local/lib/windows-dind/workspace
 
-rm --recursive --force /workspaces/$REPOSITORY
-mkdir --parents /workspaces/$REPOSITORY/windows
-mv --force /tmp/$REPOSITORY/.devcontainer /workspaces/$REPOSITORY/.devcontainer
-
-cp /workspaces/$REPOSITORY/.devcontainer/helpers/start /usr/local/bin/start
-cp /workspaces/$REPOSITORY/.devcontainer/helpers/stop /usr/local/bin/stop
-cp /workspaces/$REPOSITORY/.devcontainer/helpers/restart /usr/local/bin/restart
-cp /workspaces/$REPOSITORY/.devcontainer/helpers/reset /usr/local/bin/reset
-cp /workspaces/$REPOSITORY/.devcontainer/helpers/rebuild /usr/local/bin/rebuild
-cp /workspaces/$REPOSITORY/.devcontainer/helpers/remove /usr/local/bin/remove
-cp /workspaces/$REPOSITORY/.devcontainer/helpers/kill /usr/local/bin/kill
-cp /workspaces/$REPOSITORY/.devcontainer/helpers/start-tailscale /usr/local/bin/start-tailscale
-chmod +x /usr/local/bin/start
-chmod +x /usr/local/bin/stop
-chmod +x /usr/local/bin/restart
-chmod +x /usr/local/bin/reset
-chmod +x /usr/local/bin/rebuild
-chmod +x /usr/local/bin/remove
-chmod +x /usr/local/bin/kill
-chmod +x /usr/local/bin/start-tailscale
-
-wget https://github.com/ItzLevvie/artifacts/releases/download/29599-1/data.7z.001 --output-document /tmp/$REPOSITORY/windows/data.7z.001
-wget https://github.com/ItzLevvie/artifacts/releases/download/29599-1/data.7z.002 --output-document /tmp/$REPOSITORY/windows/data.7z.002
-wget https://github.com/ItzLevvie/artifacts/releases/download/29599-1/data.7z.003 --output-document /tmp/$REPOSITORY/windows/data.7z.003
-wget https://github.com/ItzLevvie/artifacts/releases/download/29599-1/data.7z.004 --output-document /tmp/$REPOSITORY/windows/data.7z.004
-wget https://github.com/ItzLevvie/artifacts/releases/download/29599-1/data.7z.005 --output-document /tmp/$REPOSITORY/windows/data.7z.005
-
-7z x /tmp/$REPOSITORY/windows/data.7z.001 -o/tmp/$REPOSITORY/windows
-rm --force /tmp/$REPOSITORY/windows/data.7z.00*
-qemu-img convert -p -O raw -o preallocation=off /tmp/$REPOSITORY/windows/data.vhdx /tmp/$REPOSITORY/windows/data.img
-rm --force /tmp/$REPOSITORY/windows/data.vhdx
-cp /tmp/$REPOSITORY/windows/data.img /workspaces/$REPOSITORY/windows/data.img
-
-{
-    echo "data.img"
-} > /workspaces/$REPOSITORY/windows/windows.boot
-
-{
-    echo "services:"
-    echo "  windows:"
-    echo "    container_name: windows"
-    echo "    image: dockurr/windows:latest"
-    echo "    environment:"
-    echo "      CPU_CORES: $(nproc --all)"
-    echo "      RAM_SIZE: $(free --gibi | grep 'Mem:' | awk '{print $7}')G"
-    echo "      DISK_SIZE: $(df --human-readable --block-size G /workspaces | grep '/workspaces' | awk '{print $4}')"
-    echo "      DISK2_SIZE: $(df --human-readable --block-size G /tmp | grep '/tmp' | awk '{print $4}')"
-    echo "      BOOT_MODE: windows"
-    echo "      TPM: Y"
-    echo "      KVM: Y"
-    echo "      RAM_CHECK: N"
-    echo "      MTU: 1486"
-    echo "      DISPLAY: web"
-    echo "      DEBUG: Y"
-    echo "    ports:"
-    echo "      - 3389:3389/tcp"
-    echo "      - 3389:3389/udp"
-    echo "      - 5900:5900/tcp"
-    echo "      - 5900:5900/udp"
-    echo "      - 8006:8006/tcp"
-    echo "      - 8006:8006/udp"
-    echo "    devices:"
-    echo "      - /dev/kvm"
-    echo "      - /dev/net/tun"
-    echo "      - /dev/vhost-net"
-    echo "    cap_add:"
-    echo "      - ALL"
-    echo "    security_opt:"
-    echo "      - seccomp=unconfined"
-    echo "    volumes:"
-    echo "      - /workspaces/$REPOSITORY/windows:/storage"
-    echo "      - /tmp/$REPOSITORY/windows:/storage2"
-    echo "      - /workspaces/$REPOSITORY:/data"
-    echo "    privileged: true"
-    echo "    restart: on-failure"
-} > /workspaces/$REPOSITORY/windows/windows.yaml
-
-echo ""
-
-for ((i = 180; i >= 0; i--)); do
-    echo "Your GitHub Codespaces will start in $i seconds."
-    sleep 1
+for helper in start stop restart kill remove reset rebuild start-tailscale windows-doctor; do
+    install -m 0755 "$script_dir/helpers/$helper" "/usr/local/bin/$helper"
 done
 
-echo ""
+docker compose version
+qemu-img --version
+tailscale version
+echo 'Run start to prepare and boot Windows, then start-tailscale for RDP.'
